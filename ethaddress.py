@@ -9,6 +9,7 @@
 import ecdsa
 import os
 import sha3
+from binascii import hexlify,unhexlify
 
 
 
@@ -29,25 +30,33 @@ def GenPrivKey():
 
     #2019-05-15 添加私钥范围限制
     while True:
-        privKey = os.urandom(32).encode('hex')    #生成 256位 私钥
+        privKey = hexlify(os.urandom(32))    #生成 256位 私钥
         if  g_nMinPrivKey < int(privKey, 16) <   g_nMaxPrivKey:
             return privKey
 
 def GenEthAddr():
 
-    privKey = GenPrivKey() #os.urandom(32).encode('hex')
+    # privKey = GenPrivKey() #os.urandom(32).encode('hex')
+    privKey = '7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5'
 
-    # sk = ecdsa.SigningKey.from_string(privKey.decode('hex'), curve=ecdsa.SECP256k1)
-    sk = ecdsa.SigningKey.from_string(privKey.decode('hex'), curve=ecdsa.SECP256k1) #通过私钥生成密钥对
-    pubKey = (sk.verifying_key.to_string()).encode('hex')   #获取公钥
+    sk = ecdsa.SigningKey.from_string(unhexlify(privKey), curve=ecdsa.SECP256k1) #通过私钥生成密钥对
+    pubKey = hexlify(sk.verifying_key.to_string())   #获取公钥
+    # pubKey = ecdsa.VerifyingKey.from_string(
+    #     string=unhexlify('023B358992F14647752336C99A2AAB0F4F60EBB6961719BBCECFF4A8FE134B8930'),
+    #     curve=ecdsa.SECP256k1,
+    #     valid_encodings=["compressed"]
+    #     )
 
+
+    print(sk.verifying_key.to_string(encoding='compressed').hex())
+    print(sk.verifying_key.to_string(encoding='uncompressed').hex())
     keccak = sha3.keccak_256()   # keccak_256哈希运算
-    keccak.update(pubKey.decode('hex'))
+    keccak.update(unhexlify(pubKey))
     addr = "0x" + keccak.hexdigest()[24:]  #截取后面40字符
 
-    # print(privKey)
-    # print(pubKey)
-    # print(addr)
+    print(privKey)
+    print(pubKey)
+    print(addr)
 
     return (str(privKey), str(pubKey), str(addr))
 
@@ -57,10 +66,10 @@ def GenMultiAddr(nAddrCount = 1, isTestnet = True):
         listRet.append(GenEthAddr())
     return listRet
 
-# def main():
-#     print(GenMultiAddr(1))
-#
-# if __name__ == '__main__':
-#
-#     main()
+def main():
+    print(GenMultiAddr(1))
+
+if __name__ == '__main__':
+
+    main()
 

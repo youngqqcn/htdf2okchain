@@ -12,7 +12,8 @@ def bech32_to_hexaddr(bech32_address: str) -> str:
 
 #例如：https://www.oklink.com/zh-cn/oec/address/0xaa569a9dca7ef274de69e6527440bfd55744f9b3
 def main():
-    print(bech32_to_hexaddr('ex14ftf48w20me8fhnfuef8gs9l64t5f7dnsdt9th'))
+    # print(bech32_to_hexaddr('ex14ftf48w20me8fhnfuef8gs9l64t5f7dnsdt9th'))
+    print(bech32_to_hexaddr('expub17weu6qepqgantzvj79rywafrxmye524tpa8kp6akjct3nw7wel623lsnfwynqyfe75k'))
 
 if __name__ == '__main__':
     main()

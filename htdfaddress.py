@@ -53,11 +53,13 @@ def gen_addr_from_privkey(priv_key : str) -> str:
 
 def generate_htdf_address(hrp = 'htdf'):
     privkey = generate_private_key()
-    pubkey = privkey_to_compress_pubkey(privkey)
+    pubkey = 'eb5ae98721023524d687420b19ed670c554e5353a33d564b47a6f3b2f74e060a5c66a2ebda0a' #
+    # pubkey = privkey_to_compress_pubkey(privkey)
     print("private key: {}".format(privkey))
     print("public key : {}".format(privkey_to_compress_pubkey(privkey) ))
     # print("address : {}".format( pubkey_to_address( pubkey, hrp) ) )
     print("address : {}".format( gen_addr_from_privkey(privkey) ))
+    print(pubkey_to_address(pubkey, hrp='htdf'))
 
 def main():
     generate_htdf_address(hrp='htdf')
