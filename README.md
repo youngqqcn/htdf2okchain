@@ -10,72 +10,17 @@ https://okexchain-docs.readthedocs.io/
 
 https://okexchain-docs.readthedocs.io/en/latest/developers/basics/accounts.html
 
-# HTDF资产迁移到OkChain的KIP20
+# ~~HTDF资产迁移到OkChain的KIP20~~
 
+# HTDF资产迁移到波场链
 ## 1、可行性研究
 
 
-### 私钥和地址的映射
-
-因为OkChain和HTDF一样也是基于CosmosSDK开发，所以私钥生成地址的方式相同
-
-代码验证
-
-
----
-
-
-exchain
-```go
-
-func (suite *AccountTestSuite) SetupTest() {
-	privB, _ := hex.DecodeString("7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5")
-	var privKeyA ethsecp256k1.PrivKey
-	privKeyA = append(privKeyA, privB...)
-
-	pubkey := privKeyA.PubKey()
-	if pub, ok := pubkey.(ethsecp256k1.PubKey); ok {
-		fmt.Printf("pub2:%X\n", pub[:])
-	}else {
-		fmt.Printf("errrrrrrrrrrr\n")
-	}
-	addr := sdk.AccAddress(pubkey.Address())
-	balance := sdk.NewCoins(NewPhotonCoin(sdk.OneInt()))
-	baseAcc := auth.NewBaseAccount(addr, balance, pubkey, 10, 50)
-	suite.account = &EthAccount{
-		BaseAccount: baseAcc,
-		CodeHash:    []byte{1, 2},
-	}
-}
-
-```
+### 地址映射
 
 
 
-htdf
-
-```go
-
-func TestYqq(t *testing.T) {
-	privB, _ := hex.DecodeString("7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5")
-	var privKey secp256k1.PrivKeySecp256k1
-	copy(privKey[:], privB)
-
-	pubkey := privKey.PubKey()
-	if pub, ok := pubkey.(secp256k1.PubKeySecp256k1); ok {
-		fmt.Printf("pub1: %v\n", pub.String())
-	}
-
-	addr := pubkey.Address()
-	fmt.Printf("addr1: %v\n", addr.String())
-
-	acc := types.AccAddress(addr)
-	fmt.Printf("addr2: %v\n", acc.String())
-	fmt.Printf("addr3: %v\n", ethcmn.BytesToAddress(acc.Bytes()))
-}
-```
-
-
+ETH私钥生成公钥
 ```python
 
 privKey = '7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5'
@@ -92,7 +37,7 @@ print(sk.verifying_key.to_string(encoding='compressed').hex())
 
 
 
-Okchain公钥到地址的转换
+借鉴Okchain公钥到地址的转换
 
 ```go
 func (key PubKey) Address() tmcrypto.Address {
@@ -114,7 +59,7 @@ func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 ```
 
 
-HTDF从public key推导出ETH地址
+HTDF从公钥推导出ETH地址
 
 
 ```go
@@ -173,6 +118,9 @@ func QueryAccountRequestHandlerFn(
 					panic(err)
 				}
 				fmt.Printf("pub1: %v\n", pub.String())
+				pb := ethcrypto.FromECDSAPub(pubk)
+				fmt.Printf("pub_uncompressed: %v\n", hex.EncodeToString(pb[2:])) // ignore 04 prefix
+				AccInfo.RawPubKey = hex.EncodeToString(pb[2:])
 				AccInfo.HexAddress = ethcrypto.PubkeyToAddress(*pubk).String()
 			}
 			// AccInfo.HexAddress = ethcmn.BytesToAddress(account.GetPubKey().Address().Bytes()).String()
@@ -190,13 +138,47 @@ func QueryAccountRequestHandlerFn(
 ```
 
 ETH地址
-公钥：7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5
-0x4ae081212C56492FA320338a3A64E346AB75F39B
+私钥：7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5
+公钥：03c0db929607303c8106ab8bc2add8648eb6b78d37d6d0e0caa31455a64e3ff6b0
+公钥（未压缩）：04c0db929607303c8106ab8bc2add8648eb6b78d37d6d0e0caa31455a64e3ff6b0e082af9242fb88b7544759dcadd7d9f299f3b1376e1459cdd6029c5d12d7dc0b
+eth地址：0x4ae081212C56492FA320338a3A64E346AB75F39B
 
 通过RPC接口可以查询到地址的pubkey，
 
 > 注意：仅有在HTDF2.0上转过账户才能查询到pubkey
 
+
+转TRON的地址
+
+```python
+# coding:utf8
+from binascii import unhexlify
+from tronpy.keys import PublicKey
+
+
+def main():
+    # privkey = PrivateKey(unhexlify('7dc57026ffffb27e9f4eb97376f67a4156e40c41a55e57a3049b041db3d3d5f5'))
+    pubkey = PublicKey(unhexlify('c0db929607303c8106ab8bc2add8648eb6b78d37d6d0e0caa31455a64e3ff6b0e082af9242fb88b7544759dcadd7d9f299f3b1376e1459cdd6029c5d12d7dc0b'))
+    print(pubkey.to_base58check_address())
+    print(pubkey.to_tvm_address().hex()) # tvm地址
+    # print(pubkey.to_hex_address())
+
+    pass
+
+if __name__ == '__main__':
+    main()
+
+```
+
+
+
+
+运行结果
+
+```
+TGo7x6S8FA8uRZYvyT9U1ZV4yXDYUUxAyk
+4ae081212c56492fa320338a3a64e346ab75f39b
+```
 
 ## 2、如何迁移？
 
@@ -205,19 +187,22 @@ ETH地址
 
 #### 方案1：主动迁移
 
-由用户主动发起，在HTDF公链向黑洞地址进行转账进行HTDF销毁，由机器人监测，并由机器人在OK链向用户地址在OK链映射的地址，进行自动等量空投。
+由用户主动发起，在HTDF公链向黑洞地址进行转账进行HTDF销毁，由机器人监测，并由机器人在TRON向用户地址在TRON映射的地址，进行自动等量空投。
 
-例如：用户在HTDF公链销毁500HTDF，机器人监测到这笔交易，自动在OK对其对应的地址进行空投 500 KIP20-HTDF。
-
-
-#### 方案2：被动迁移（尚不完善）
+例如：用户在HTDF公链销毁500HTDF，机器人监测到这笔交易，自动在TRON对其对应的地址进行空投 500 KIP20-HTDF。
 
 
-此方案只能适用于那些在HTDF2.0上进行过转账的地址，因为那些没有在HTDF2.0转过帐的地址无法获取其公钥，所以，无法推导出其在OK链上的映射地址，无法空投。
+另外，用户交易所的HTDF资产，则不需要进行任何操作，交易所会帮用户进行迁移。
+
+
+#### ~~方案2：被动迁移（尚不完善）~~
+
+
+~~此方案只能适用于那些在HTDF2.0上进行过转账的地址，因为那些没有在HTDF2.0转过帐的地址无法获取其公钥，所以，无法推导出其在OK链上的映射地址，无法空投。~~
 
 
 
-### 2.2、KIP20-HTDF资产的发行总量及流通量的问题
+### 2.2、TRC20-HTDF资产的发行总量及流通量的问题
 
 - 保持`96,000,000`总的发行量恒定不变
 - 取消挖矿机制，流通量等于总发行量
