@@ -7,7 +7,7 @@ import "./BlackList.sol";
 contract UpgradedStandardToken is StandardToken {
     // those methods are called by the legacy contract
     // and they must ensure msg.sender to be the contract address
-    uint public _totalSupply;
+    uint public totalSupply;
     function transferByLegacy(address from, address to, uint value) public returns (bool);
     function transferFromByLegacy(address sender, address from, address spender, uint value) public returns (bool);
     function approveByLegacy(address from, address spender, uint value) public returns (bool);
@@ -18,6 +18,10 @@ contract UpgradedStandardToken is StandardToken {
 
 contract OrientwaltToken is Pausable, StandardToken, BlackList {
 
+    string public name;
+    string public symbol;
+    uint8 public decimals;
+    uint public totalSupply;
     address public upgradedAddress;
     bool public deprecated;
 
@@ -25,10 +29,10 @@ contract OrientwaltToken is Pausable, StandardToken, BlackList {
     //  All the tokens are deposited to the owner address
     function OrientwaltToken() public {
         decimals = 8;
-        _totalSupply = 96000000*10**decimals;
-        name = "Orientwalt";
+        totalSupply = 96000000*10**8;
+        name = "HTDF";
         symbol = "HTDF";
-        balances[owner] = _totalSupply;
+        balances[owner] = totalSupply;
         deprecated = false;
     }
 
@@ -99,7 +103,7 @@ contract OrientwaltToken is Pausable, StandardToken, BlackList {
         if (deprecated) {
             return StandardToken(upgradedAddress).totalSupply();
         } else {
-            return _totalSupply;
+            return totalSupply;
         }
     }
 
@@ -107,7 +111,7 @@ contract OrientwaltToken is Pausable, StandardToken, BlackList {
         require(isBlackListed[_blackListedUser]);
         uint dirtyFunds = balanceOf(_blackListedUser);
         balances[_blackListedUser] = 0;
-        _totalSupply = _totalSupply.sub(dirtyFunds);
+        totalSupply = totalSupply.sub(dirtyFunds);
         DestroyedBlackFunds(_blackListedUser, dirtyFunds);
     }
 

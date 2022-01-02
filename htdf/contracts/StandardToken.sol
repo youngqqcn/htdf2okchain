@@ -24,11 +24,8 @@ contract ERC20 is ERC20Basic {
  */
 contract StandardToken is ERC20, BasicToken {
 
+
   mapping (address => mapping (address => uint256)) internal allowed;
-  string public name;
-  string public symbol;
-  uint8 public decimals;
-  uint public _totalSupply;
 
   uint public constant MAX_UINT = 2**256 - 1;
 
